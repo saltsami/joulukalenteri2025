@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Joulukalenteri 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&display=swap');
+
+        :root {
+            --bg-color: #0f172a;
+            --accent-red: #ef4444;
+            --accent-green: #166534;
+            --text-gold: #fbbf24;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: #ffffff;
+            font-family: 'Press Start 2P', cursive;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        .christmas-font {
+            font-family: 'Mountains of Christmas', cursive;
+        }
+
+        #game-canvas {
+            image-rendering: pixelated;
+            cursor: none;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 10;
+        }
+        
+        #hidden-image-container {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5; 
+            background: #000;
+            pointer-events: none;
+        }
+        
+        /* KORJATTU: Kuva on 1:1 neliö ja keskitetty */
+        #hidden-image {
+            max-width: 90vmin;
+            max-height: 90vmin;
+            width: 90vmin;
+            height: 90vmin;
+            object-fit: cover;
+            box-shadow: 0 0 50px rgba(255,255,255,0.2);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .pixel-text {
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        .btn {
+            background: var(--accent-red);
+            border: 2px solid #991b1b;
+            box-shadow: 4px 4px 0px #000;
+            transition: all 0.1s;
+            cursor: pointer;
+            font-family: 'Press Start 2P';
+            text-transform: uppercase;
+        }
+        .btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px #000;
+        }
+        
+        .day-box {
+            background: var(--accent-green);
+            border: 2px solid #14532d;
+            box-shadow: 3px 3px 0px #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.1s;
+            position: relative;
+            aspect-ratio: 1;
+        }
+        .day-box:hover { transform: translateY(-2px); background: #15803d; }
+        .day-box:active { transform: translateY(2px); box-shadow: 1px 1px 0px #000; }
+        
+        .day-box.locked {
+            background: #334155;
+            border-color: #1e293b;
+            cursor: not-allowed;
+            opacity: 0.8;
+            box-shadow: none;
+        }
+        
+        .day-box.opened {
+            background: #1e1e1e;
+            border: 2px dashed #444;
+            box-shadow: inset 2px 2px 5px #000;
+            color: #666;
+        }
+        .day-box.opened img { opacity: 0.5; filter: grayscale(100%); }
+
+        /* Työkalut - Cursor */
+        #cursor-tool {
+            position: fixed;
+            pointer-events: none;
+            width: 64px;
+            height: 64px;
+            z-index: 50;
+            transform-origin: bottom left; 
+            transition: transform 0.05s;
+            filter: drop-shadow(4px 4px 0px rgba(0,0,0,0.5));
+        }
+        @media (hover: none) { #cursor-tool { display: none; } }
+
+        .swing { animation: hammerSwing 0.15s ease-out; }
+        @keyframes hammerSwing {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(-60deg); }
+            100% { transform: rotate(0deg); }
+        }
+        
+        .brush-stroke { animation: brushStroke 0.2s ease-out; }
+        @keyframes brushStroke {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(15deg) scale(1.2); }
+            100% { transform: rotate(0deg) scale(1); }
+        }
+        
+        .bomb-drop { animation: bombDrop 0.3s ease-out; }
+        @keyframes bombDrop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+        
+        .laser-zap { animation: laserZap 0.1s ease-out; }
+        @keyframes laserZap {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.1); filter: brightness(2); }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
+        
+        .candy-smash { animation: candySmash 0.2s ease-out; }
+        @keyframes candySmash {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(-20deg); }
+            75% { transform: rotate(20deg); }
+            100% { transform: rotate(0deg); }
+        }
+        
+        /* Toolbar */
+        #toolbar {
+            display: flex;
+            gap: 8px;
+            background: rgba(0,0,0,0.8);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 2px solid #fbbf24;
+        }
+        
+        .tool-btn {
+            width: 48px;
+            height: 48px;
+            background: #1e293b;
+            border: 2px solid #475569;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.1s;
+        }
+        .tool-btn:hover {
+            background: #334155;
+            transform: translateY(-2px);
+        }
+        .tool-btn.active {
+            background: #166534;
+            border-color: #22c55e;
+            box-shadow: 0 0 10px #22c55e;
+        }
+        .tool-btn {
+            position: relative;
+        }
+        .tool-btn .tool-key {
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 6px;
+            color: #94a3b8;
+            font-family: 'Press Start 2P';
+        }
+        
+        @media (max-width: 500px) {
+            .tool-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+            }
+            #toolbar {
+                gap: 6px;
+                padding: 8px 10px;
+                bottom: max(16px, env(safe-area-inset-bottom));
+            }
+            .tool-btn .tool-key {
+                display: none; /* Hide keyboard hints on mobile */
+            }
+        }
+        
+        /* Prevent double-tap zoom on iOS */
+        * {
+            touch-action: manipulation;
+        }
+        
+        /* But allow touch-action none on canvas for game */
+        #game-canvas {
+            touch-action: none;
+        }
+        
+        /* Better touch targets for mobile */
+        @media (hover: none) and (pointer: coarse) {
+            .day-box {
+                min-height: 60px;
+            }
+            .btn {
+                min-height: 44px;
+                padding: 12px 16px;
+            }
+            #back-btn {
+                font-size: 12px;
+            }
+        }
+        
+        .snowflake {
+            position: absolute;
+            color: #fff;
+            pointer-events: none;
+            z-index: 1;
+        }
+        @keyframes snowfall { to { transform: translateY(100vh); } }
+
+        #calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 800px;
+        }
+        @media (min-width: 640px) {
+            #calendar-grid { grid-template-columns: repeat(6, 1fr); gap: 15px; }
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center relative">
+
+    <div id="cursor-tool">
+        <!-- Tool SVG will be set by JavaScript -->
+    </div>
+
+    <div id="hidden-image-container">
+        <img id="hidden-image" src="" alt="Prize">
+    </div>
+
+    <div id="ui-layer" class="absolute inset-0 z-20 pointer-events-none flex flex-col items-center justify-center overflow-y-auto">
+        
+        <div id="calendar-view" class="pointer-events-auto w-full flex flex-col items-center p-4 min-h-screen justify-center overflow-y-auto" style="touch-action: pan-y;">
+            <h1 class="text-3xl md:text-5xl text-red-500 christmas-font mb-2 pixel-text text-center mt-8">Joulukalenteri 2025</h1>
+            <p class="text-[10px] md:text-xs text-blue-200 mb-8 text-center max-w-md">
+                RIKO PIKSELIMÖSSÖ JA PALJASTA KUVA!
+            </p>
+            <div id="calendar-grid"></div>
+            <div class="mt-8 mb-8">
+                <button id="reset-save-btn" class="text-[8px] text-gray-500 hover:text-red-500 underline">
+                    Nollaa tallennus (Dev)
+                </button>
+            </div>
+        </div>
+
+        <div id="game-ui" class="absolute top-0 left-0 w-full p-4 hidden pointer-events-auto flex justify-between items-start">
+            <div>
+                <button id="back-btn" class="btn text-[10px] py-2 px-3 text-white mb-2 shadow-lg">
+                    &larr; TAKAISIN
+                </button>
+                <div class="text-yellow-400 text-[10px] bg-gray-900 bg-opacity-80 p-2 border-2 border-gray-600 rounded">
+                    <div id="hint-text" class="mb-1 text-green-400 italic">...</div>
+                    BLOCKS: <span id="block-count">0</span>
+                </div>
+            </div>
+            
+            <div class="text-right">
+                <div id="day-title" class="text-2xl md:text-4xl christmas-font text-red-500 pixel-text animate-pulse">
+                    PÄIVÄ 1
+                </div>
+            </div>
+            
+            <!-- Toolbar -->
+            <div id="toolbar" class="absolute bottom-4 left-1/2 -translate-x-1/2">
+                <button class="tool-btn active" data-tool="hammer" title="Vasara (1)">
+                    🔨
+                    <span class="tool-key">1</span>
+                </button>
+                <button class="tool-btn" data-tool="brush" title="Sivellin (2)">
+                    🖌️
+                    <span class="tool-key">2</span>
+                </button>
+                <button class="tool-btn" data-tool="bomb" title="Pommi (3)">
+                    💣
+                    <span class="tool-key">3</span>
+                </button>
+                <button class="tool-btn" data-tool="laser" title="Laser (4)">
+                    ⚡
+                    <span class="tool-key">4</span>
+                </button>
+                <button class="tool-btn" data-tool="candy" title="Karkkitikku (5)">
+                    🍬
+                    <span class="tool-key">5</span>
+                </button>
+                <button class="tool-btn" data-tool="snowball" title="Lumipallo (6)">
+                    ❄️
+                    <span class="tool-key">6</span>
+                </button>
+            </div>
+            
+            <div id="mobile-hint" class="absolute bottom-24 left-1/2 -translate-x-1/2 text-[10px] text-white opacity-50 animate-bounce pointer-events-none md:hidden">
+                TÄPPÄÄ RIKKOAKSESI!
+            </div>
+            
+            <!-- Touch indicator for mobile -->
+            <div id="touch-indicator" class="fixed pointer-events-none z-40 hidden">
+                <div class="w-16 h-16 rounded-full border-4 border-yellow-400 opacity-50 animate-ping"></div>
+            </div>
+        </div>
+
+        <div id="victory-screen" class="hidden pointer-events-auto absolute inset-0 bg-black bg-opacity-95 flex flex-col items-center justify-center text-center p-4 z-50">
+            <h2 class="text-3xl md:text-4xl text-yellow-500 christmas-font mb-4 pixel-text">LUUKKU AVATTU!</h2>
+            <div class="w-64 h-64 bg-gray-800 mb-6 border-4 border-yellow-600 flex items-center justify-center overflow-hidden">
+                <img id="victory-image" src="" class="object-cover w-full h-full">
+            </div>
+            <p id="victory-desc" class="text-xs text-white mb-8 max-w-sm leading-5">...</p>
+            <button id="victory-back-btn" class="btn text-white py-4 px-8 text-sm animate-pulse">
+                PALAA KALENTERIIN
+            </button>
+        </div>
+
+    </div>
+
+    <canvas id="game-canvas"></canvas>
+
+    <script>
+        // CONFIG
+        // Images from images/1.png to images/24.png
+        const GAME_DATA = [
+            { day: 1,  img: "images/1.png", hint: "Liekki loimuaa...", desc: "Ensimmäinen kynttilä 🕯️" },
+            { day: 2,  img: "images/2.png", hint: "Huii, vauhtia!", desc: "Pulkkamäessä! 🛷" },
+            { day: 3,  img: "images/3.png", hint: "Tuoksuu hyvältä...", desc: "Piparkakkutalkoot! 🍪" },
+            { day: 4,  img: "images/4.png", hint: "Neljä liekkiä...", desc: "Adventtiseppele 🕯️🕯️🕯️🕯️" },
+            { day: 5,  img: "images/5.png", hint: "Ratikka kulkee...", desc: "Vanha kaupunki ✨" },
+            { day: 6,  img: "images/6.png", hint: "Sinivalkoista...", desc: "Itsenäisyyspäivä! 🇫🇮" },
+            { day: 7,  img: "images/7.png", hint: "Maatilan väkeä...", desc: "Eläimet navetan pihalla 🐑" },
+            { day: 8,  img: "images/8.png", hint: "Pieniä auttajia...", desc: "Metsätontut puuhissa 🧝" },
+            { day: 9,  img: "images/9.png", hint: "Kuoro laulaa...", desc: "Joulukonsertti kirkossa 🎵" },
+            { day: 10, img: "images/10.png", hint: "Kiekko liitää!", desc: "Ulkojäällä! 🏒" },
+            { day: 11, img: "images/11.png", hint: "Höyryää ja tuoksuu...", desc: "Joulutorilla! 🎄" },
+            { day: 12, img: "images/12.png", hint: "Palloja ja nauhaa...", desc: "Kuusen koristelu! 🎄" },
+            { day: 13, img: "images/13.png", hint: "Kirjoja ja hiljaisuutta...", desc: "Vanha kirjasto 📚" },
+            { day: 14, img: "images/14.png", hint: "Valoa pimeydessä...", desc: "Paperitähti ikkunassa ⭐" },
+            { day: 15, img: "images/15.png", hint: "Kavioiden kopse...", desc: "Porot ja tunturi 🦌" },
+            { day: 16, img: "images/16.png", hint: "Juna saapuu...", desc: "Vanha rautatieasema 🚂" },
+            { day: 17, img: "images/17.png", hint: "Löylyä ja avantoa...", desc: "Talvisauna! 🧖" },
+            { day: 18, img: "images/18.png", hint: "Odotetaan kyytiä...", desc: "Bussipysäkki talvella 🚌" },
+            { day: 19, img: "images/19.png", hint: "Vanhaa puuta...", desc: "Kirkko ja puuveistokset ⛪" },
+            { day: 20, img: "images/20.png", hint: "Löytyykö manteli?", desc: "Joulupuuro! 🥣" },
+            { day: 21, img: "images/21.png", hint: "Taivas loimuaa...", desc: "Revontulet ja kettu 🦊" },
+            { day: 22, img: "images/22.png", hint: "Paketit odottaa...", desc: "Lahjat kuusen alla 🎁" },
+            { day: 23, img: "images/23.png", hint: "Huurre ikkunassa...", desc: "Jouluaaton aatto 🕯️" },
+            { day: 24, img: "images/24.png", hint: "JOULU ON TÄÄLLÄ!", desc: "Hyvää Joulua! 🎄🎁✨" },
+        ];
+
+        const LOCK_FUTURE_DAYS = false; 
+
+        // ENGINE
+        const CANVAS_WIDTH = window.innerWidth;
+        const CANVAS_HEIGHT = window.innerHeight;
+        const GRAVITY = 0.5;
+
+        // TOOLS CONFIGURATION
+        const TOOLS = {
+            hammer: {
+                name: 'Vasara',
+                emoji: '🔨',
+                radius: 1,
+                animation: 'swing',
+                sound: 'bonk',
+                svg: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19.5 8.5L16.5 5.5L14 8L17 11L19.5 8.5Z" fill="#94a3b8" stroke="#000" stroke-width="1.5"/>
+                    <path d="M14 8L5 17L7 19L16 10L14 8Z" fill="#78350f" stroke="#000" stroke-width="1.5"/>
+                </svg>`
+            },
+            brush: {
+                name: 'Sivellin',
+                emoji: '🖌️',
+                radius: 3,
+                animation: 'brush-stroke',
+                sound: 'swoosh',
+                svg: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 21L12 12L15 15L6 24" fill="#78350f" stroke="#000" stroke-width="1"/>
+                    <path d="M12 12L21 3L24 6L15 15L12 12Z" fill="#f59e0b" stroke="#000" stroke-width="1"/>
+                    <ellipse cx="22" cy="4" rx="3" ry="2" fill="#ef4444" transform="rotate(-45 22 4)"/>
+                </svg>`
+            },
+            bomb: {
+                name: 'Pommi',
+                emoji: '💣',
+                radius: 8,
+                animation: 'bomb-drop',
+                sound: 'boom',
+                svg: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="14" r="8" fill="#1e293b" stroke="#000" stroke-width="1.5"/>
+                    <path d="M12 6V2M10 3L14 3" stroke="#f59e0b" stroke-width="2"/>
+                    <circle cx="9" cy="12" r="2" fill="#475569"/>
+                </svg>`
+            },
+            laser: {
+                name: 'Laser',
+                emoji: '⚡',
+                radius: 0,
+                isLine: true,
+                animation: 'laser-zap',
+                sound: 'zap',
+                svg: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M13 2L4 14H11L10 22L20 10H13L13 2Z" fill="#fbbf24" stroke="#000" stroke-width="1"/>
+                </svg>`
+            },
+            candy: {
+                name: 'Karkkitikku',
+                emoji: '🍬',
+                radius: 2,
+                isSpiral: true,
+                animation: 'candy-smash',
+                sound: 'crunch',
+                svg: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 18L18 6" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M6 18L18 6" stroke="#ef4444" stroke-width="4" stroke-linecap="round" stroke-dasharray="3 3"/>
+                    <circle cx="5" cy="19" r="3" fill="#ef4444" stroke="#000"/>
+                    <circle cx="19" cy="5" r="3" fill="#22c55e" stroke="#000"/>
+                </svg>`
+            },
+            snowball: {
+                name: 'Lumipallo',
+                emoji: '❄️',
+                radius: 5,
+                isSplash: true,
+                animation: 'bomb-drop',
+                sound: 'poof',
+                svg: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+                    <circle cx="8" cy="10" r="2" fill="#fff"/>
+                    <circle cx="14" cy="8" r="1.5" fill="#fff"/>
+                </svg>`
+            }
+        };
+
+        let currentTool = 'hammer';
+
+        let gameState = {
+            mode: 'CALENDAR',
+            activeDayIdx: -1,
+            blocks: [],
+            particles: [],
+            shockwaves: [],
+            laserBeams: [],
+            progress: JSON.parse(localStorage.getItem('pixel_advent_progress') || '[]')
+        };
+
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const hiddenImage = document.getElementById('hidden-image');
+        const cursorTool = document.getElementById('cursor-tool');
+        
+        const views = {
+            calendar: document.getElementById('calendar-view'),
+            game: document.getElementById('game-ui'),
+            victory: document.getElementById('victory-screen')
+        };
+
+        canvas.width = CANVAS_WIDTH;
+        canvas.height = CANVAS_HEIGHT;
+
+        // --- CALENDAR LOGIC ---
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+            const today = new Date().getDate();
+            const currentMonth = new Date().getMonth();
+
+            for (let i = 1; i <= 24; i++) {
+                const dayData = GAME_DATA.find(d => d.day === i);
+                const isOpened = gameState.progress.includes(i);
+                
+                let isLocked = false;
+                if (LOCK_FUTURE_DAYS && (currentMonth !== 11 || i > today)) isLocked = true;
+
+                const el = document.createElement('div');
+                el.className = `day-box ${isLocked ? 'locked' : ''} ${isOpened ? 'opened' : ''}`;
+                
+                let content = `<span class="text-xl md:text-2xl christmas-font text-white drop-shadow-md z-10">${i}</span>`;
+                
+                if (isOpened && dayData) {
+                    content += `<div class="absolute inset-0 overflow-hidden rounded opacity-40">
+                        <img src="${dayData.img}" class="w-full h-full object-cover grayscale">
+                    </div>
+                    <div class="z-20 text-green-500 text-2xl">✓</div>`;
+                } else if (isLocked) {
+                    content += `<span class="text-xs text-gray-500 mt-1">LUKITTU</span>`;
+                }
+
+                el.innerHTML = content;
+                if (!isLocked) el.onclick = () => launchLevel(i);
+                grid.appendChild(el);
+            }
+        }
+
+        function launchLevel(dayNum) {
+            const dataIdx = GAME_DATA.findIndex(d => d.day === dayNum);
+            const dayData = GAME_DATA[dataIdx] || { 
+                day: dayNum, 
+                img: `https://source.unsplash.com/random/800x600/?christmas,${dayNum}`, 
+                hint: "...", desc: "Yllätys!" 
+            };
+
+            gameState.activeDayIdx = dayNum;
+            gameState.mode = 'LOADING'; // Wait for image load
+            
+            views.calendar.style.display = 'none';
+            views.victory.style.display = 'none';
+            views.game.style.display = 'flex';
+            
+            document.getElementById('day-title').innerText = `PÄIVÄ ${dayNum}`;
+            document.getElementById('hint-text').innerText = dayData.hint;
+            
+            // Start loading image
+            hiddenImage.style.opacity = '0';
+            hiddenImage.onload = () => {
+                // Once loaded, generate the pixels from the image data
+                generatePixelatedCover(hiddenImage);
+                gameState.mode = 'PLAYING';
+                hiddenImage.style.opacity = '1'; // Show HD image underneath
+            };
+            hiddenImage.src = dayData.img;
+        }
+
+        // --- NEW: PIXELATE IMAGE LOGIC ---
+
+        function generatePixelatedCover(imgElement) {
+            gameState.blocks = [];
+            
+            // Grid settings - 1:1 aspect ratio
+            const size = window.innerWidth < 600 ? 20 : 18; // Block size (mobiili 20px, desktop 18px)
+            
+            // Calculate 1:1 square area (90vmin)
+            const vmin = Math.min(CANVAS_WIDTH, CANVAS_HEIGHT);
+            const targetSize = vmin * 0.9;
+            
+            const cols = Math.floor(targetSize / size);
+            const rows = cols; // 1:1 aspect ratio
+            
+            const startX = (CANVAS_WIDTH - (cols * size)) / 2;
+            const startY = (CANVAS_HEIGHT - (rows * size)) / 2;
+
+            // 1. Draw image to a tiny off-screen canvas to get pixel colors
+            const tempCanvas = document.createElement('canvas');
+            const tCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = cols;
+            tempCanvas.height = rows;
+            
+            // Draw and stretch image to fit the grid dimensions exactly
+            tCtx.drawImage(imgElement, 0, 0, cols, rows);
+            
+            // 2. Read pixel data
+            // Note: May fail with CORS if images are not configured properly on server. 
+            // Unsplash usually works with crossorigin="anonymous"
+            let imgData;
+            try {
+                imgData = tCtx.getImageData(0, 0, cols, rows).data;
+            } catch (e) {
+                console.warn("CORS Error - using fallback colors", e);
+                // Fallback if CORS fails: Random noise
+                for(let y=0; y<rows; y++) {
+                    for(let x=0; x<cols; x++) {
+                        addBlock(startX + x*size, startY + y*size, size, '#333');
+                    }
+                }
+                return;
+            }
+
+            // 3. Create Blocks
+            for(let y = 0; y < rows; y++) {
+                for(let x = 0; x < cols; x++) {
+                    const i = (y * cols + x) * 4;
+                    const r = imgData[i];
+                    const g = imgData[i+1];
+                    const b = imgData[i+2];
+                    const a = imgData[i+3];
+
+                    // Skip fully transparent pixels
+                    if (a < 50) continue;
+
+                    const color = `rgb(${r},${g},${b})`;
+                    
+                    // Determine special type randomly
+                    let type = 'normal';
+                    if (Math.random() < 0.03) type = 'explosive'; // Random explosive chance
+
+                    gameState.blocks.push({
+                        x: startX + x * size,
+                        y: startY + y * size,
+                        size: size,
+                        color: color,
+                        type: type,
+                        active: true,
+                        isCritical: false,
+                        criticalTimer: 0
+                    });
+                }
+            }
+        }
+
+        function addBlock(x, y, size, color) {
+             gameState.blocks.push({
+                x: x, y: y, size: size, color: color, type: 'normal',
+                active: true, isCritical: false, criticalTimer: 0
+            });
+        }
+
+
+        // --- GAME LOOP ---
+
+        function loop() {
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            if (gameState.mode === 'PLAYING' || gameState.mode === 'VICTORY') {
+                let activeCount = 0;
+                let activeIndices = [];
+
+                if (gameState.mode === 'PLAYING') {
+                    gameState.blocks.forEach((b, idx) => {
+                        if (b.active) {
+                            drawBlock(b);
+                            activeCount++;
+                            activeIndices.push(idx);
+                        }
+                    });
+                    document.getElementById('block-count').innerText = activeCount;
+
+                    if (Math.random() < 0.05 && activeIndices.length > 0) {
+                        const idx = activeIndices[Math.floor(Math.random() * activeIndices.length)];
+                        if (!gameState.blocks[idx].isCritical) {
+                            gameState.blocks[idx].isCritical = true;
+                            gameState.blocks[idx].criticalTimer = 60;
+                        }
+                    }
+
+                    if (activeCount === 0 && gameState.blocks.length > 0) {
+                        triggerVictory();
+                    }
+                }
+
+                // Particles
+                for (let i = gameState.particles.length - 1; i >= 0; i--) {
+                    const p = gameState.particles[i];
+                    p.life -= p.decay;
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += GRAVITY;
+                    
+                    if (p.life > 0) {
+                        ctx.globalAlpha = p.life;
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(p.x, p.y, p.size, p.size);
+                    } else {
+                        gameState.particles.splice(i, 1);
+                    }
+                }
+                ctx.globalAlpha = 1.0;
+
+                // Shockwaves
+                for (let i = gameState.shockwaves.length - 1; i >= 0; i--) {
+                    const sw = gameState.shockwaves[i];
+                    sw.radius += 15;
+                    sw.alpha -= 0.05;
+                    if (sw.alpha > 0) {
+                        ctx.beginPath();
+                        ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${sw.alpha})`;
+                        ctx.lineWidth = 5;
+                        ctx.stroke();
+                    } else {
+                        gameState.shockwaves.splice(i, 1);
+                    }
+                }
+                
+                // Laser beams
+                for (let i = gameState.laserBeams.length - 1; i >= 0; i--) {
+                    const lb = gameState.laserBeams[i];
+                    lb.life -= 0.1;
+                    if (lb.life > 0) {
+                        ctx.strokeStyle = `rgba(251, 191, 36, ${lb.life})`;
+                        ctx.lineWidth = 8 * lb.life;
+                        ctx.shadowColor = '#fbbf24';
+                        ctx.shadowBlur = 20;
+                        ctx.beginPath();
+                        if (lb.isVertical) {
+                            ctx.moveTo(lb.x, 0);
+                            ctx.lineTo(lb.x, CANVAS_HEIGHT);
+                        } else {
+                            ctx.moveTo(0, lb.y);
+                            ctx.lineTo(CANVAS_WIDTH, lb.y);
+                        }
+                        ctx.stroke();
+                        ctx.shadowBlur = 0;
+                    } else {
+                        gameState.laserBeams.splice(i, 1);
+                    }
+                }
+            }
+            requestAnimationFrame(loop);
+        }
+
+        function drawBlock(b) {
+            if (b.isCritical) {
+                b.criticalTimer--;
+                if (b.criticalTimer <= 0) b.isCritical = false;
+            }
+
+            ctx.fillStyle = b.color;
+            ctx.fillRect(b.x, b.y, b.size, b.size);
+            
+            // Add a slight border to create "grid" effect on the image
+            ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(b.x, b.y, b.size, b.size);
+
+            if (b.isCritical) {
+                const flash = Math.abs(Math.sin(Date.now() / 50));
+                ctx.strokeStyle = `rgba(255, 255, 255, ${flash})`;
+                ctx.lineWidth = 3;
+                ctx.strokeRect(b.x, b.y, b.size, b.size);
+            } else if (b.type === 'explosive') {
+                // Subtle shine for explosives
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.fillRect(b.x + 2, b.y + 2, 4, 4);
+            }
+        }
+
+        function triggerVictory() {
+            gameState.mode = 'VICTORY';
+            if (!gameState.progress.includes(gameState.activeDayIdx)) {
+                gameState.progress.push(gameState.activeDayIdx);
+                localStorage.setItem('pixel_advent_progress', JSON.stringify(gameState.progress));
+            }
+
+            const dayData = GAME_DATA.find(d => d.day === gameState.activeDayIdx) || {};
+            document.getElementById('victory-image').src = dayData.img || hiddenImage.src;
+            document.getElementById('victory-desc').innerText = dayData.desc || "Hyvää joulua!";
+            
+            setTimeout(() => {
+                views.game.style.display = 'none';
+                views.victory.style.display = 'flex';
+                for(let i=0; i<10; i++) {
+                    setTimeout(() => {
+                        spawnExplosion(Math.random()*CANVAS_WIDTH, Math.random()*CANVAS_HEIGHT, ['#f00','#0f0','#ff0'][Math.floor(Math.random()*3)], 40, 3);
+                    }, i * 300);
+                }
+            }, 1000);
+        }
+
+        // --- TOOL SYSTEM ---
+        
+        function setTool(toolName) {
+            if (!TOOLS[toolName]) return;
+            currentTool = toolName;
+            
+            // Update cursor SVG
+            cursorTool.innerHTML = TOOLS[toolName].svg;
+            
+            // Update toolbar buttons
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tool === toolName);
+            });
+        }
+        
+        // Initialize tool
+        setTool('hammer');
+        
+        // Keyboard shortcuts for tools
+        window.addEventListener('keydown', e => {
+            const toolKeys = { '1': 'hammer', '2': 'brush', '3': 'bomb', '4': 'laser', '5': 'candy', '6': 'snowball' };
+            if (toolKeys[e.key]) {
+                setTool(toolKeys[e.key]);
+            }
+        });
+        
+        // Toolbar click/touch handlers
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            // Use both click and touchend for better mobile response
+            const handleToolSelect = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setTool(btn.dataset.tool);
+                
+                // Haptic feedback on mobile if available
+                if (navigator.vibrate) {
+                    navigator.vibrate(10);
+                }
+            };
+            
+            btn.addEventListener('click', handleToolSelect);
+            btn.addEventListener('touchend', handleToolSelect, {passive: false});
+        });
+
+        // --- INTERACTION ---
+        
+        const moveCursor = (x, y) => {
+            const offsetX = -45; 
+            const offsetY = -20;
+            cursorTool.style.left = (x + offsetX) + 'px';
+            cursorTool.style.top = (y + offsetY) + 'px';
+        };
+
+        window.addEventListener('mousemove', e => {
+            gameState.mouseX = e.clientX;
+            gameState.mouseY = e.clientY;
+            moveCursor(e.clientX, e.clientY);
+        });
+
+        const handleInput = (x, y) => {
+            if (gameState.mode !== 'PLAYING') return;
+            
+            const tool = TOOLS[currentTool];
+            
+            // Animate cursor
+            cursorTool.classList.remove(tool.animation);
+            void cursorTool.offsetWidth; 
+            cursorTool.classList.add(tool.animation);
+            moveCursor(x, y);
+
+            let hit = false;
+            const hitBlocks = [];
+            
+            // Different behavior for different tools
+            if (tool.isLine) {
+                // Laser: destroys a vertical or horizontal line
+                const isVertical = Math.random() > 0.5;
+                gameState.blocks.forEach((b, idx) => {
+                    if (!b.active) return;
+                    const bCenterX = b.x + b.size / 2;
+                    const bCenterY = b.y + b.size / 2;
+                    
+                    if (isVertical) {
+                        if (Math.abs(bCenterX - x) < b.size) {
+                            hitBlocks.push(idx);
+                        }
+                    } else {
+                        if (Math.abs(bCenterY - y) < b.size) {
+                            hitBlocks.push(idx);
+                        }
+                    }
+                });
+                
+                // Add laser beam visual
+                gameState.laserBeams.push({
+                    x: x, y: y,
+                    isVertical: isVertical,
+                    life: 1.0
+                });
+                
+            } else if (tool.isSpiral) {
+                // Candy: spiral pattern
+                gameState.blocks.forEach((b, idx) => {
+                    if (!b.active) return;
+                    const bCenterX = b.x + b.size / 2;
+                    const bCenterY = b.y + b.size / 2;
+                    const dist = Math.hypot(bCenterX - x, bCenterY - y);
+                    const angle = Math.atan2(bCenterY - y, bCenterX - x);
+                    const spiralRadius = (angle + Math.PI) / (Math.PI * 2) * tool.radius * b.size * 2;
+                    
+                    if (Math.abs(dist - spiralRadius) < b.size * 2) {
+                        hitBlocks.push(idx);
+                    }
+                });
+                
+            } else if (tool.isSplash) {
+                // Snowball: random splash in radius
+                gameState.blocks.forEach((b, idx) => {
+                    if (!b.active) return;
+                    const bCenterX = b.x + b.size / 2;
+                    const bCenterY = b.y + b.size / 2;
+                    const dist = Math.hypot(bCenterX - x, bCenterY - y);
+                    
+                    if (dist < tool.radius * b.size && Math.random() > 0.3) {
+                        hitBlocks.push(idx);
+                    }
+                });
+                
+            } else {
+                // Standard radius-based tools (hammer, brush, bomb)
+                gameState.blocks.forEach((b, idx) => {
+                    if (!b.active) return;
+                    const bCenterX = b.x + b.size / 2;
+                    const bCenterY = b.y + b.size / 2;
+                    const dist = Math.hypot(bCenterX - x, bCenterY - y);
+                    
+                    if (dist < tool.radius * b.size + b.size / 2) {
+                        hitBlocks.push(idx);
+                    }
+                });
+            }
+            
+            // Process hit blocks
+            hitBlocks.forEach(idx => {
+                const b = gameState.blocks[idx];
+                if (!b.active) return;
+                
+                b.active = false;
+                hit = true;
+                
+                if (b.isCritical) {
+                    triggerMegaExplosion(b.x + b.size/2, b.y + b.size/2);
+                } else if (b.type === 'explosive') {
+                    spawnExplosion(b.x, b.y, b.color, 20, 2);
+                    gameState.blocks.forEach(nb => {
+                        if (nb.active && Math.hypot(nb.x - b.x, nb.y - b.y) < b.size * 4) {
+                            nb.active = false;
+                            spawnExplosion(nb.x, nb.y, nb.color, 5, 1);
+                        }
+                    });
+                } else {
+                    // Different particle effects based on tool
+                    if (currentTool === 'snowball') {
+                        spawnExplosion(b.x, b.y, '#e2e8f0', 8, 1.5);
+                    } else if (currentTool === 'laser') {
+                        spawnExplosion(b.x, b.y, '#fbbf24', 3, 2);
+                    } else if (currentTool === 'candy') {
+                        spawnExplosion(b.x, b.y, Math.random() > 0.5 ? '#ef4444' : '#22c55e', 6, 1);
+                    } else {
+                        spawnExplosion(b.x, b.y, b.color, 5, 1);
+                    }
+                }
+            });
+            
+            if (hit) {
+                const shakeAmount = currentTool === 'bomb' ? 8 : (currentTool === 'snowball' ? 6 : 4);
+                document.body.style.transform = `translate(${Math.random()*shakeAmount-shakeAmount/2}px, ${Math.random()*shakeAmount-shakeAmount/2}px)`;
+                setTimeout(() => document.body.style.transform = 'none', 50);
+            }
+        };
+
+        // Mouse events
+        window.addEventListener('mousedown', e => {
+            if (e.target.closest('#toolbar') || e.target.closest('.btn')) return;
+            handleInput(e.clientX, e.clientY);
+        });
+        
+        // Track if we're currently touching the game area
+        let isTouching = false;
+        let lastTouchTime = 0;
+        
+        // Touch indicator element
+        const touchIndicator = document.getElementById('touch-indicator');
+        
+        // Show touch indicator at position
+        const showTouchIndicator = (x, y) => {
+            touchIndicator.style.left = (x - 32) + 'px';
+            touchIndicator.style.top = (y - 32) + 'px';
+            touchIndicator.classList.remove('hidden');
+            setTimeout(() => touchIndicator.classList.add('hidden'), 300);
+        };
+        
+        // Touch events for mobile
+        window.addEventListener('touchstart', e => {
+            // Don't process if touching UI elements
+            if (e.target.closest('#toolbar') || e.target.closest('.btn') || e.target.closest('.tool-btn')) {
+                return;
+            }
+            
+            if (gameState.mode !== 'PLAYING') return;
+            
+            e.preventDefault(); // Prevent scrolling only during game
+            isTouching = true;
+            
+            const touch = e.touches[0];
+            showTouchIndicator(touch.clientX, touch.clientY);
+            handleInput(touch.clientX, touch.clientY);
+            
+            // Haptic feedback
+            if (navigator.vibrate) {
+                navigator.vibrate(5);
+            }
+        }, {passive: false});
+        
+        // Allow continuous painting while dragging finger
+        window.addEventListener('touchmove', e => {
+            if (!isTouching || gameState.mode !== 'PLAYING') return;
+            if (e.target.closest('#toolbar') || e.target.closest('.tool-btn')) return;
+            
+            e.preventDefault();
+            
+            // Throttle touch move to avoid too many updates
+            const now = Date.now();
+            if (now - lastTouchTime < 50) return; // 20 FPS throttle
+            lastTouchTime = now;
+            
+            const touch = e.touches[0];
+            handleInput(touch.clientX, touch.clientY);
+        }, {passive: false});
+        
+        window.addEventListener('touchend', () => {
+            isTouching = false;
+        });
+        
+        window.addEventListener('touchcancel', () => {
+            isTouching = false;
+        });
+
+        document.getElementById('back-btn').addEventListener('click', () => {
+            gameState.mode = 'CALENDAR';
+            views.game.style.display = 'none';
+            views.calendar.style.display = 'flex';
+            hiddenImage.src = "";
+            renderCalendar();
+        });
+
+        document.getElementById('victory-back-btn').addEventListener('click', () => {
+            gameState.mode = 'CALENDAR';
+            views.victory.style.display = 'none';
+            views.calendar.style.display = 'flex';
+            hiddenImage.src = "";
+            renderCalendar();
+        });
+
+        document.getElementById('reset-save-btn').addEventListener('click', () => {
+            if(confirm("Haluatko varmasti nollata?")) {
+                localStorage.removeItem('pixel_advent_progress');
+                location.reload();
+            }
+        });
+
+        function spawnExplosion(x, y, color, count, force) {
+            for (let i = 0; i < count; i++) {
+                gameState.particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 10 * force,
+                    vy: (Math.random() - 0.5) * 10 * force,
+                    life: 1.0,
+                    decay: Math.random() * 0.03 + 0.02,
+                    color: color,
+                    size: Math.random() * 5 + 2
+                });
+            }
+        }
+
+        function triggerMegaExplosion(x, y) {
+            gameState.shockwaves.push({ x, y, radius: 1, alpha: 1 });
+            spawnExplosion(x, y, '#fff', 60, 3);
+            const radius = 200;
+            gameState.blocks.forEach(b => {
+                if (b.active && Math.hypot(b.x - x, b.y - y) < radius) {
+                    b.active = false;
+                    if(Math.random() > 0.8) spawnExplosion(b.x, b.y, b.color, 3, 2);
+                }
+            });
+        }
+
+        for(let i=0; i<30; i++) {
+            const s = document.createElement('div');
+            s.className = 'snowflake';
+            s.innerHTML = '❄';
+            s.style.left = Math.random() * 100 + 'vw';
+            s.style.opacity = Math.random();
+            s.style.fontSize = (Math.random() * 10 + 10) + 'px';
+            s.style.animation = `snowfall ${Math.random() * 10 + 5}s linear infinite`;
+            s.style.animationDelay = -Math.random() * 10 + 's';
+            document.body.appendChild(s);
+        }
+
+        renderCalendar();
+        loop();
+
+    </script>
+</body>
+</html>
