@@ -397,6 +397,10 @@
         const GRAVITY = 0.5;
 
         // TOOLS CONFIGURATION
+        // Mobile devices get smaller tool effects for more gameplay
+        const isMobile = window.innerWidth < 600 || ('ontouchstart' in window);
+        const mobileMultiplier = isMobile ? 0.5 : 1; // 50% smaller on mobile
+        
         const TOOLS = {
             hammer: {
                 name: 'Vasara',
@@ -864,9 +868,11 @@
             // Different behavior for different tools
             if (tool.isLine) {
                 // Laser: destroys a vertical or horizontal line
+                // On mobile, laser only hits every other block (50% chance)
                 const isVertical = Math.random() > 0.5;
                 gameState.blocks.forEach((b, idx) => {
                     if (!b.active) return;
+                    if (isMobile && Math.random() > 0.5) return; // Skip half on mobile
                     const bCenterX = b.x + b.size / 2;
                     const bCenterY = b.y + b.size / 2;
                     
@@ -890,13 +896,14 @@
                 
             } else if (tool.isSpiral) {
                 // Candy: spiral pattern
+                const effectiveRadius = tool.radius * mobileMultiplier;
                 gameState.blocks.forEach((b, idx) => {
                     if (!b.active) return;
                     const bCenterX = b.x + b.size / 2;
                     const bCenterY = b.y + b.size / 2;
                     const dist = Math.hypot(bCenterX - x, bCenterY - y);
                     const angle = Math.atan2(bCenterY - y, bCenterX - x);
-                    const spiralRadius = (angle + Math.PI) / (Math.PI * 2) * tool.radius * b.size * 2;
+                    const spiralRadius = (angle + Math.PI) / (Math.PI * 2) * effectiveRadius * b.size * 2;
                     
                     if (Math.abs(dist - spiralRadius) < b.size * 2) {
                         hitBlocks.push(idx);
@@ -905,26 +912,28 @@
                 
             } else if (tool.isSplash) {
                 // Snowball: random splash in radius
+                const effectiveRadius = tool.radius * mobileMultiplier;
                 gameState.blocks.forEach((b, idx) => {
                     if (!b.active) return;
                     const bCenterX = b.x + b.size / 2;
                     const bCenterY = b.y + b.size / 2;
                     const dist = Math.hypot(bCenterX - x, bCenterY - y);
                     
-                    if (dist < tool.radius * b.size && Math.random() > 0.3) {
+                    if (dist < effectiveRadius * b.size && Math.random() > 0.3) {
                         hitBlocks.push(idx);
                     }
                 });
                 
             } else {
                 // Standard radius-based tools (hammer, brush, bomb)
+                const effectiveRadius = tool.radius * mobileMultiplier;
                 gameState.blocks.forEach((b, idx) => {
                     if (!b.active) return;
                     const bCenterX = b.x + b.size / 2;
                     const bCenterY = b.y + b.size / 2;
                     const dist = Math.hypot(bCenterX - x, bCenterY - y);
                     
-                    if (dist < tool.radius * b.size + b.size / 2) {
+                    if (dist < effectiveRadius * b.size + b.size / 2) {
                         hitBlocks.push(idx);
                     }
                 });
@@ -1076,7 +1085,7 @@
         function triggerMegaExplosion(x, y) {
             gameState.shockwaves.push({ x, y, radius: 1, alpha: 1 });
             spawnExplosion(x, y, '#fff', 60, 3);
-            const radius = 200;
+            const radius = isMobile ? 100 : 200; // Smaller on mobile
             gameState.blocks.forEach(b => {
                 if (b.active && Math.hypot(b.x - x, b.y - y) < radius) {
                     b.active = false;
