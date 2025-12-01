@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ei vielä! 🎅 - Joulukalenteri 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&display=swap');
+        
+        body {
+            background: linear-gradient(180deg, #0f172a 0%, #1e3a5f 100%);
+            font-family: 'Press Start 2P', cursive;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        .christmas-font {
+            font-family: 'Mountains of Christmas', cursive;
+        }
+        
+        .santa {
+            animation: bounce 1s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .shake {
+            animation: shake 0.5s ease-in-out infinite;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(10deg); }
+        }
+        
+        .snowflake {
+            position: fixed;
+            color: #fff;
+            pointer-events: none;
+            z-index: 1;
+            animation: snowfall linear infinite;
+        }
+        
+        @keyframes snowfall {
+            to { transform: translateY(100vh) rotate(360deg); }
+        }
+        
+        .glow {
+            text-shadow: 0 0 10px #fbbf24, 0 0 20px #fbbf24, 0 0 30px #fbbf24;
+        }
+        
+        .naughty-list {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center text-white">
+    
+    <div class="text-center p-8 z-10 relative">
+        <div class="santa text-8xl mb-6">🎅</div>
+        
+        <h1 class="christmas-font text-5xl md:text-7xl text-red-500 mb-4 glow">
+            HO HO HO!
+        </h1>
+        
+        <h2 class="text-xl md:text-2xl text-yellow-400 mb-8">
+            Yritit kurkistaa etuajassa?
+        </h2>
+        
+        <div class="bg-black bg-opacity-50 rounded-lg p-6 mb-8 border-2 border-red-600">
+            <p class="text-sm md:text-base text-gray-300 mb-4">
+                Joulupukki näkee kaiken... 👀
+            </p>
+            <p class="text-xs text-red-400 naughty-list">
+                📜 Olet nyt TUHMIEN LISTALLA 📜
+            </p>
+        </div>
+        
+        <div class="shake text-6xl mb-8">🔔</div>
+        
+        <p class="text-xs text-gray-400 mb-8">
+            Luukut avautuvat päivä kerrallaan.<br>
+            Kärsivällisyys on hyve! 🎄
+        </p>
+        
+        <a href="/" class="inline-block bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-8 rounded-lg border-4 border-green-800 shadow-lg transform hover:scale-105 transition-all">
+            <span class="text-sm">PALAA KALENTERIIN</span>
+        </a>
+        
+        <div class="mt-12 text-6xl">
+            🎁 🎄 ⭐ 🎄 🎁
+        </div>
+    </div>
+    
+    <script>
+        // Snowfall effect
+        for(let i = 0; i < 50; i++) {
+            const snow = document.createElement('div');
+            snow.className = 'snowflake';
+            snow.innerHTML = ['❄', '❅', '❆', '✻', '✼'][Math.floor(Math.random() * 5)];
+            snow.style.left = Math.random() * 100 + 'vw';
+            snow.style.fontSize = (Math.random() * 15 + 10) + 'px';
+            snow.style.opacity = Math.random() * 0.8 + 0.2;
+            snow.style.animationDuration = (Math.random() * 5 + 5) + 's';
+            snow.style.animationDelay = -Math.random() * 10 + 's';
+            document.body.appendChild(snow);
+        }
+        
+        // Random ho ho ho sound effect (just visual)
+        setInterval(() => {
+            const hoho = document.createElement('div');
+            hoho.innerText = 'HO!';
+            hoho.className = 'fixed text-red-500 christmas-font text-2xl pointer-events-none';
+            hoho.style.left = Math.random() * 80 + 10 + 'vw';
+            hoho.style.top = Math.random() * 80 + 10 + 'vh';
+            hoho.style.opacity = '0.7';
+            hoho.style.transition = 'all 2s';
+            document.body.appendChild(hoho);
+            
+            setTimeout(() => {
+                hoho.style.opacity = '0';
+                hoho.style.transform = 'translateY(-50px)';
+            }, 100);
+            
+            setTimeout(() => hoho.remove(), 2000);
+        }, 3000);
+    </script>
+</body>
+</html>

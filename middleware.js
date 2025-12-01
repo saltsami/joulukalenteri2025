@@ -26,16 +26,8 @@ export default function middleware(request) {
   
   // Only allow if it's December and the requested day <= current day
   if (currentMonth !== 11 || dayNum > currentDay) {
-    return new Response(
-      JSON.stringify({ 
-        error: 'Ei vielä! 🎅',
-        message: `Luukku ${dayNum} avautuu ${dayNum}.12.`
-      }),
-      { 
-        status: 403,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
+    // Redirect naughty glitchers to the 404 page 🎅
+    return Response.redirect(new URL('/404.html', request.url), 302);
   }
   
   // Allow the request to continue to the actual image
