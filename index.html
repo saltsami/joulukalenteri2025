@@ -96,11 +96,10 @@
         .day-box:active { transform: translateY(2px); box-shadow: 1px 1px 0px #000; }
         
         .day-box.locked {
-            background: #334155;
-            border-color: #1e293b;
+            background: var(--accent-green);
+            border-color: #14532d;
             cursor: not-allowed;
-            opacity: 0.8;
-            box-shadow: none;
+            opacity: 0.7;
         }
         
         .day-box.opened {
@@ -271,7 +270,7 @@
     </div>
 
     <div id="hidden-image-container">
-        <img id="hidden-image" src="" alt="Prize">
+        <img id="hidden-image" src="" alt="Joulukalenteri">
     </div>
 
     <div id="ui-layer" class="absolute inset-0 z-20 pointer-events-none flex flex-col items-center justify-center overflow-y-auto">
