@@ -1,0 +1,13 @@
+# Nanobanana output
+nanobanana-output/
+
+# Old images in root
+/*.png
+
+# Dev files
+generate_images.md
+prompts.txt
+
+# OS files
+.DS_Store
+Thumbs.db
