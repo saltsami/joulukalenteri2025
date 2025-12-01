@@ -20,9 +20,15 @@ export default function middleware(request) {
   }
   
   // Check if the day is allowed
+  // Use UTC time since server might be in different timezone
   const now = new Date();
-  const currentMonth = now.getMonth(); // 0-11, December = 11
-  const currentDay = now.getDate();
+  const utcDate = new Date(now.getTime() + now.getTimezoneOffset() * 60000);
+  
+  // For Finnish timezone (UTC+2), we need to add the offset
+  const finnishDate = new Date(utcDate.getTime() + 2 * 60 * 60 * 1000);
+  
+  const currentMonth = finnishDate.getMonth(); // 0-11, December = 11
+  const currentDay = finnishDate.getDate();
   
   // Only allow if it's December and the requested day <= current day
   if (currentMonth !== 11 || dayNum > currentDay) {
