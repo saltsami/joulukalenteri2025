@@ -41,12 +41,16 @@
         #hidden-image-container {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            display: flex;
+            display: none; /* Hidden by default, shown during game */
             align-items: center;
             justify-content: center;
             z-index: 5; 
             background: #000;
             pointer-events: none;
+        }
+        
+        #hidden-image-container.active {
+            display: flex;
         }
         
         /* KORJATTU: Kuva on 1:1 neliö ja keskitetty */
@@ -542,6 +546,9 @@
             views.victory.style.display = 'none';
             views.game.style.display = 'flex';
             
+            // Show the image container
+            document.getElementById('hidden-image-container').classList.add('active');
+            
             document.getElementById('day-title').innerText = `PÄIVÄ ${dayNum}`;
             document.getElementById('hint-text').innerText = dayData.hint;
             
@@ -1026,6 +1033,7 @@
             gameState.mode = 'CALENDAR';
             views.game.style.display = 'none';
             views.calendar.style.display = 'flex';
+            document.getElementById('hidden-image-container').classList.remove('active');
             hiddenImage.src = "";
             renderCalendar();
         });
@@ -1034,6 +1042,7 @@
             gameState.mode = 'CALENDAR';
             views.victory.style.display = 'none';
             views.calendar.style.display = 'flex';
+            document.getElementById('hidden-image-container').classList.remove('active');
             hiddenImage.src = "";
             renderCalendar();
         });
