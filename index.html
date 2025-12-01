@@ -282,11 +282,6 @@
                 RIKO PIKSELIMÖSSÖ JA PALJASTA KUVA!
             </p>
             <div id="calendar-grid"></div>
-            <div class="mt-8 mb-8">
-                <button id="reset-save-btn" class="text-[8px] text-gray-500 hover:text-red-500 underline">
-                    Nollaa tallennus (Dev)
-                </button>
-            </div>
         </div>
 
         <div id="game-ui" class="absolute top-0 left-0 w-full p-4 hidden pointer-events-auto flex justify-between items-start">
@@ -337,11 +332,6 @@
             <div id="mobile-hint" class="absolute bottom-24 left-1/2 -translate-x-1/2 text-[10px] text-white opacity-50 animate-bounce pointer-events-none md:hidden">
                 TÄPPÄÄ RIKKOAKSESI!
             </div>
-            
-            <!-- Touch indicator for mobile -->
-            <div id="touch-indicator" class="fixed pointer-events-none z-40 hidden">
-                <div class="w-16 h-16 rounded-full border-4 border-yellow-400 opacity-50 animate-ping"></div>
-            </div>
         </div>
 
         <div id="victory-screen" class="hidden pointer-events-auto absolute inset-0 bg-black bg-opacity-95 flex flex-col items-center justify-center text-center p-4 z-50">
@@ -389,7 +379,7 @@
             { day: 24, img: "images/24.png", hint: "JOULU ON TÄÄLLÄ!", desc: "Hyvää Joulua! 🎄🎁✨" },
         ];
 
-        const LOCK_FUTURE_DAYS = false; 
+        const LOCK_FUTURE_DAYS = true; // Only allow opening current and past days 
 
         // ENGINE
         const CANVAS_WIDTH = window.innerWidth;
@@ -988,17 +978,6 @@
         let isTouching = false;
         let lastTouchTime = 0;
         
-        // Touch indicator element
-        const touchIndicator = document.getElementById('touch-indicator');
-        
-        // Show touch indicator at position
-        const showTouchIndicator = (x, y) => {
-            touchIndicator.style.left = (x - 32) + 'px';
-            touchIndicator.style.top = (y - 32) + 'px';
-            touchIndicator.classList.remove('hidden');
-            setTimeout(() => touchIndicator.classList.add('hidden'), 300);
-        };
-        
         // Touch events for mobile
         window.addEventListener('touchstart', e => {
             // Don't process if touching UI elements
@@ -1012,7 +991,6 @@
             isTouching = true;
             
             const touch = e.touches[0];
-            showTouchIndicator(touch.clientX, touch.clientY);
             handleInput(touch.clientX, touch.clientY);
             
             // Haptic feedback
@@ -1059,13 +1037,6 @@
             views.calendar.style.display = 'flex';
             hiddenImage.src = "";
             renderCalendar();
-        });
-
-        document.getElementById('reset-save-btn').addEventListener('click', () => {
-            if(confirm("Haluatko varmasti nollata?")) {
-                localStorage.removeItem('pixel_advent_progress');
-                location.reload();
-            }
         });
 
         function spawnExplosion(x, y, color, count, force) {
